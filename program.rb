@@ -1,35 +1,28 @@
 require "csv"
-
+require_relative "null_record"
+require_relative "database"
+require_relative "record"
 body = File.open("hotels.csv", "r")
 
 csv = CSV.new(body, headers: true, header_converters: :symbol)
 
-database = csv.to_a.map { |row| row.to_hash }
-database.each do |entry|
-  entry.each do |key, value|
-    value.strip!
-  end
-end
+database = Database.new(csv)
+table = database.store
 
-database.each do |entry|
-  entry[:number_of_singles].gsub!(/\D/, "")
-  entry[:number_of_doubles].gsub!(/\D/, "")
+table.each do |entry|
   entry[:rooms] = entry[:number_of_singles].to_i + entry[:number_of_doubles].to_i
 end
 
-puts database
 input = ""
 while input != "q"
   print "What Property? > "
   input = gets.chomp
 
-  record = database.detect { |entry| entry[:hotel] == input } || NullProperty.new
+  find_input = table.detect { |entry| entry[:hotel] == input }
 
-  puts record
-end
+  record = Record.new(find_input) || NullRecord.new
 
-class NullProperty
-  def no_record
-    "No Record Found"
-  end
+  puts
+  puts record.stringify
+  puts
 end
